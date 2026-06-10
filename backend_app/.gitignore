@@ -1,0 +1,4 @@
+# File: backend/.gitignore
+venv/
+__pycache__/
+.env
