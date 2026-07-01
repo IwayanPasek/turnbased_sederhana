@@ -29,6 +29,12 @@ class _GameScreenState extends ConsumerState<GameScreen> {
   }
 
   @override
+  void dispose() {
+    gameNotifier.disconnect();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: gameNotifier,

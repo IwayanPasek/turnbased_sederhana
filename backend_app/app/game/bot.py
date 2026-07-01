@@ -1,6 +1,6 @@
-import random
 from typing import List
-from app.game.mechanics import SKILL_CONFIG, MAX_RAGE
+from app.game.mechanics import SKILL_CONFIG
+
 
 def _sim_tick_status(effects: List[dict], hp: int) -> tuple:
     new_hp = hp
@@ -17,14 +17,20 @@ def _sim_tick_status(effects: List[dict], hp: int) -> tuple:
             rem.append({**s, "turns_left": new_t})
     return new_hp, rem
 
-def _sim_apply_status(effects: List[dict], status_name: str, config: dict) -> List[dict]:
+
+def _sim_apply_status(
+    effects: List[dict], status_name: str, config: dict
+) -> List[dict]:
     res = [s for s in effects if s["name"] != status_name]
-    res.append({
-        "name": status_name,
-        "turns_left": config[status_name]["duration"],
-        "value": config[status_name]["tick_damage"],
-    })
+    res.append(
+        {
+            "name": status_name,
+            "turns_left": config[status_name]["duration"],
+            "value": config[status_name]["tick_damage"],
+        }
+    )
     return res
+
 
 def _bot_choose_action(
     hp: int,
@@ -32,16 +38,17 @@ def _bot_choose_action(
     cooldowns: dict,
     status_effects: List[dict],
     opponent_hp: int,
-    opponent_status: List[dict]
+    opponent_status: List[dict],
 ) -> str:
-    from app.game.mechanics import STATUS_CONFIG
-    
     # Kumpulkan opsi valid
     valid_options = []
     for skill_name, cfg in SKILL_CONFIG.items():
         if cooldowns.get(skill_name, 0) > 0:
             continue
-        if skill_name == "ultimate" and rage < SKILL_CONFIG["ultimate"]["rage_required"]:
+        if (
+            skill_name == "ultimate"
+            and rage < SKILL_CONFIG["ultimate"]["rage_required"]
+        ):
             continue
         valid_options.append(skill_name)
 
@@ -53,7 +60,7 @@ def _bot_choose_action(
     has_freeze = any(s["name"] == "FREEZE" for s in opponent_status)
     if has_freeze and "heavy_strike" in valid_options:
         return "heavy_strike"
-        
+
     has_poison = any(s["name"] == "POISON" for s in opponent_status)
     if has_poison and "fire_blast" in valid_options:
         return "fire_blast"
@@ -70,8 +77,13 @@ def _bot_choose_action(
 
     # Attack priority
     atk_skills = [
-        "fire_blast", "stun_bolt", "poison_dart", "frost_nova", 
-        "heavy_strike", "water_pulse", "attack"
+        "fire_blast",
+        "stun_bolt",
+        "poison_dart",
+        "frost_nova",
+        "heavy_strike",
+        "water_pulse",
+        "attack",
     ]
     for skill in atk_skills:
         if skill in valid_options:

@@ -79,6 +79,10 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            ),
             child: const Text('Beli'),
           ),
         ],
@@ -88,6 +92,8 @@ class _ShopScreenState extends State<ShopScreen> {
     if (confirmed != true) return;
 
     final resp = await _shopService.buyItem(item['id'] as int);
+    if (!mounted) return;
+    
     if (resp != null) {
       final message = resp['message'] ?? 'Berhasil membeli item';
       ScaffoldMessenger.of(
@@ -268,6 +274,7 @@ class _ShopScreenState extends State<ShopScreen> {
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
                                 ),
                                 child: const Text('Beli'),
                               ),

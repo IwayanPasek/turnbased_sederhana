@@ -1,4 +1,3 @@
-import asyncio
 from typing import Optional
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Header, HTTPException
 from app.game.manager import ArenaManager
@@ -9,6 +8,7 @@ from app.game.bot import _sim_tick_status, _sim_apply_status, _bot_choose_action
 
 router = APIRouter()
 arena_manager = ArenaManager()
+
 
 @router.websocket("/ws/arena")
 async def arena_endpoint(websocket: WebSocket, token: Optional[str] = None):
@@ -31,8 +31,11 @@ async def arena_endpoint(websocket: WebSocket, token: Optional[str] = None):
         print(f"Error WS: {e}")
         await arena_manager.disconnect(websocket)
 
+
 @router.post("/simulate_practice")
-def simulate_practice(req: PracticeSimRequest, authorization: Optional[str] = Header(None)):
+def simulate_practice(
+    req: PracticeSimRequest, authorization: Optional[str] = Header(None)
+):
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid token")
     token = authorization.split(" ")[1]
@@ -60,15 +63,17 @@ def simulate_practice(req: PracticeSimRequest, authorization: Optional[str] = He
     # Decrement status & cooldowns for new turn
     p_hp, p_status = _sim_tick_status(p_status, p_hp)
     b_hp, b_status = _sim_tick_status(b_status, b_hp)
-    
+
     for k in list(p_cooldowns.keys()):
-        if p_cooldowns[k] > 0: p_cooldowns[k] -= 1
+        if p_cooldowns[k] > 0:
+            p_cooldowns[k] -= 1
     for k in list(b_cooldowns.keys()):
-        if b_cooldowns[k] > 0: b_cooldowns[k] -= 1
+        if b_cooldowns[k] > 0:
+            b_cooldowns[k] -= 1
 
     messages = []
     messages.append(f"{p_name} menggunakan {action} pada {b_name}!")
-    
+
     cfg = SKILL_CONFIG.get(action, {})
     if action == "attack":
         dmg = 15
@@ -80,10 +85,21 @@ def simulate_practice(req: PracticeSimRequest, authorization: Optional[str] = He
         messages.append(f"{p_name} memulihkan {heal} HP.")
     elif action in ("fire_blast", "stun_bolt", "poison_dart", "frost_nova"):
         dmg = 12
-        b_hp -= dmg
         st = cfg.get("apply_status")
-        b_status = _sim_apply_status(b_status, st, STATUS_CONFIG)
-        messages.append(f"{b_name} menerima {dmg} damage dan terkena {st}!")
+        has_toxic_explosion = False
+        if action == "fire_blast":
+            has_poison = any(s["name"] == "POISON" for s in b_status)
+            if has_poison:
+                b_status = [s for s in b_status if s["name"] != "POISON"]
+                dmg += 35
+                has_toxic_explosion = True
+                messages.append("💥 TOXIC EXPLOSION! Api menyulut racun lawan! (+35 Bonus Damage)")
+        b_hp -= dmg
+        if not has_toxic_explosion and st:
+            b_status = _sim_apply_status(b_status, st, STATUS_CONFIG)
+            messages.append(f"{b_name} menerima {dmg} damage dan terkena {st}!")
+        else:
+            messages.append(f"{b_name} menerima {dmg} damage.")
     elif action == "heavy_strike":
         dmg = 35
         # Synergy test
@@ -101,20 +117,26 @@ def simulate_practice(req: PracticeSimRequest, authorization: Optional[str] = He
         if has_burn:
             p_status = [s for s in p_status if s["name"] != "BURN"]
             p_status = _sim_apply_status(p_status, "REGEN", STATUS_CONFIG)
-            messages.append("🌊♨️ STEAM RECOVERY! Air memadamkan api dan memberikan REGEN!")
+            messages.append(
+                "🌊♨️ STEAM RECOVERY! Air memadamkan api dan memberikan REGEN!"
+            )
         messages.append(f"{b_name} menerima {dmg} damage dari serangan air.")
     else:
         messages.append(f"{action} digunakan (efek simulasi sederhana).")
 
-    if cfg.get("cooldown"): p_cooldowns[action] = cfg["cooldown"]
+    if cfg.get("cooldown"):
+        p_cooldowns[action] = cfg["cooldown"]
 
     if p_hp > 0 and b_hp > 0:
         # Bot turn
-        b_action = _bot_choose_action(b_hp, b_rage, b_cooldowns, b_status, p_hp, p_status)
+        b_action = _bot_choose_action(
+            b_hp, b_rage, b_cooldowns, b_status, p_hp, p_status
+        )
         messages.append(f"{b_name} (BOT) membalas dengan {b_action}!")
-        
+
         b_cfg = SKILL_CONFIG.get(b_action, {})
-        if b_cfg.get("cooldown"): b_cooldowns[b_action] = b_cfg["cooldown"]
+        if b_cfg.get("cooldown"):
+            b_cooldowns[b_action] = b_cfg["cooldown"]
 
         if b_action == "attack":
             dmg = 15
@@ -145,7 +167,7 @@ def simulate_practice(req: PracticeSimRequest, authorization: Optional[str] = He
             "status_effects": p_status,
             "cooldowns": p_cooldowns,
             "streak": 0,
-            "momentum_stacks": 0
+            "momentum_stacks": 0,
         },
         "player2": {
             "name": b_name,
@@ -156,24 +178,27 @@ def simulate_practice(req: PracticeSimRequest, authorization: Optional[str] = He
             "status_effects": b_status,
             "cooldowns": b_cooldowns,
             "streak": 0,
-            "momentum_stacks": 0
-        }
+            "momentum_stacks": 0,
+        },
     }
+
 
 @router.get("/game/skills")
 def get_skills_info():
     skills = []
     for skill_name, cfg in SKILL_CONFIG.items():
         is_ultimate = skill_name == "ultimate"
-        skills.append({
-            "id": skill_name,
-            "name": skill_name.replace("_", " ").title(),
-            "description": cfg.get("description", ""),
-            "cooldown": cfg.get("cooldown", 0),
-            "rage_required": cfg.get("rage_required", 0) if is_ultimate else 0,
-            "is_ultimate": is_ultimate,
-            "is_defensive": skill_name == "iron_shield",
-            "is_heal": skill_name == "heal",
-            "apply_status": cfg.get("apply_status")
-        })
+        skills.append(
+            {
+                "id": skill_name,
+                "name": skill_name.replace("_", " ").title(),
+                "description": cfg.get("description", ""),
+                "cooldown": cfg.get("cooldown", 0),
+                "rage_required": cfg.get("rage_required", 0) if is_ultimate else 0,
+                "is_ultimate": is_ultimate,
+                "is_defensive": skill_name == "iron_shield",
+                "is_heal": skill_name == "heal",
+                "apply_status": cfg.get("apply_status"),
+            }
+        )
     return {"skills": skills}

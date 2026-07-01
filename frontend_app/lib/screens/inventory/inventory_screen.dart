@@ -105,15 +105,17 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final upgradeCosts = details?['upgrade_costs'] as List<dynamic>?;
     final nextLevel = currentLevel + 1;
     dynamic costEntry;
-    if (upgradeCosts != null)
+    if (upgradeCosts != null) {
       costEntry = upgradeCosts.firstWhere(
         (e) => e['level'] == nextLevel,
         orElse: () => null,
       );
+    }
 
-    final coins = costEntry != null ? (costEntry['coins_cost'] ?? 0) : 0;
-    final gems = costEntry != null ? (costEntry['gems_cost'] ?? 0) : 0;
+    final coins = costEntry != null ? (costEntry['cost_coins'] ?? 0) : 0;
+    final gems = costEntry != null ? (costEntry['cost_gems'] ?? 0) : 0;
 
+    if (!mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -137,6 +139,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
     if (confirmed != true) return;
 
     final resp = await _shopService.upgradeItem(invItem['id'] as int);
+    if (!mounted) return;
+    
     if (resp != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(resp['message'] ?? 'Upgrade berhasil')),
@@ -151,6 +155,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   Future<void> _onEquip(Map<String, dynamic> invItem) async {
     final resp = await _shopService.equipItem(invItem['id'] as int);
+    if (!mounted) return;
+    
     if (resp != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(resp['message'] ?? 'Berhasil dilengkapi')),

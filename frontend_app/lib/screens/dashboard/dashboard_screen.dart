@@ -74,7 +74,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               slivers: [
                 // ─ Header SliverAppBar ─────────────────────────────────
                 SliverAppBar(
-                  expandedHeight: 200,
+                  expandedHeight: 240,
                   floating: false,
                   pinned: true,
                   backgroundColor: Colors.black87,
@@ -100,11 +100,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               const SizedBox(height: 16),
                               Row(
                                 children: [
-                                  _statChip('\ud83c\udfc6', 'MMR', '${_stats['mmr'] ?? 1000}'),
+                                  _statChip('🏆', 'MMR', '${_stats['mmr'] ?? 1000}'),
                                   const SizedBox(width: 10),
-                                  _statChip('\u2705', 'Menang', '${_stats['wins'] ?? 0}'),
+                                  _statChip('✅', 'Menang', '${_stats['wins'] ?? 0}'),
                                   const SizedBox(width: 10),
-                                  _statChip('\u274c', 'Kalah', '${_stats['losses'] ?? 0}'),
+                                  _statChip('❌', 'Kalah', '${_stats['losses'] ?? 0}'),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              Row(
+                                children: [
+                                  _statChip('🪙', 'Koin', '${_stats['coins'] ?? 0}'),
+                                  const SizedBox(width: 10),
+                                  _statChip('💎', 'Gems', '${_stats['gems'] ?? 0}'),
                                 ],
                               ),
                             ],

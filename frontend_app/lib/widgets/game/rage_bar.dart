@@ -1,4 +1,4 @@
-﻿// lib/widgets/game/rage_bar.dart
+// lib/widgets/game/rage_bar.dart
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 
@@ -38,7 +38,7 @@ class RageBar extends StatelessWidget {
               tween: Tween(begin: ratio, end: ratio),
               duration: const Duration(milliseconds: 400),
               curve: Curves.easeOut,
-              builder: (_, value, __) => LinearProgressIndicator(
+              builder: (_, value, child) => LinearProgressIndicator(
                 value: value,
                 backgroundColor: Colors.white12,
                 valueColor: AlwaysStoppedAnimation<Color>(color),

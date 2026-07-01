@@ -65,6 +65,15 @@ class GameNotifier extends ChangeNotifier {
     _service.sendAction(action);
   }
   
+  void disconnect() {
+    _sub?.cancel();
+    _service.disconnect();
+    isWaiting = true;
+    battleLog.clear();
+    state = const AsyncValue.loading();
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _sub?.cancel();

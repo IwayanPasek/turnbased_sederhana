@@ -15,6 +15,7 @@ from app.game.mechanics import (
 )
 from app.core.database import get_db_connection
 
+
 class GameRoom:
     def __init__(
         self, player1: str, player1_ws: WebSocket, player2: str, player2_ws: WebSocket
@@ -34,13 +35,16 @@ class GameRoom:
         conn = get_db_connection()
         try:
             with conn.cursor() as cursor:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT si.granted_skill 
                     FROM player_inventory pi
                     JOIN shop_items si ON pi.item_id = si.item_id
                     JOIN players p ON pi.player_id = p.id
                     WHERE p.username = %s AND pi.is_equipped = TRUE AND si.granted_skill IS NOT NULL
-                """, (username,))
+                """,
+                    (username,),
+                )
                 for row in cursor.fetchall():
                     skill = row["granted_skill"]
                     if skill not in skills:
@@ -70,18 +74,22 @@ class GameRoom:
     def _apply_status(self, target: str, status_name: str):
         cfg = STATUS_CONFIG[status_name]
         self.players[target]["status_effects"] = [
-            s for s in self.players[target]["status_effects"]
+            s
+            for s in self.players[target]["status_effects"]
             if s["name"] != status_name
         ]
-        self.players[target]["status_effects"].append({
-            "name": status_name,
-            "turns_left": cfg["duration"],
-            "value": cfg["tick_damage"],
-        })
+        self.players[target]["status_effects"].append(
+            {
+                "name": status_name,
+                "turns_left": cfg["duration"],
+                "value": cfg["tick_damage"],
+            }
+        )
 
     def _remove_status(self, target: str, status_name: str):
         self.players[target]["status_effects"] = [
-            s for s in self.players[target]["status_effects"]
+            s
+            for s in self.players[target]["status_effects"]
             if s["name"] != status_name
         ]
 
@@ -101,8 +109,10 @@ class GameRoom:
                     f"{emoji} {player} terkena {name}: -{tick} HP ({turns_left - 1} turn tersisa)"
                 )
             elif name == "REGEN":
-                tick = abs(value) # value is negative in config
-                self.players[player]["hp"] = min(MAX_HP, self.players[player]["hp"] + tick)
+                tick = abs(value)  # value is negative in config
+                self.players[player]["hp"] = min(
+                    MAX_HP, self.players[player]["hp"] + tick
+                )
                 emoji = STATUS_CONFIG[name]["emoji"]
                 messages.append(
                     f"{emoji} {player} REGEN: +{tick} HP ({turns_left - 1} turn tersisa)"
@@ -126,12 +136,15 @@ class GameRoom:
         available = []
         cooldowns = self.players[player]["cooldowns"]
         rage = self.players[player]["rage"]
-        skills = self.players[player].get("granted_skills", ["attack", "heal", "ultimate"])
+        skills = self.players[player].get(
+            "granted_skills", ["attack", "heal", "ultimate"]
+        )
 
         for skill_name in skills:
             cfg = SKILL_CONFIG.get(skill_name)
-            if not cfg: continue
-            
+            if not cfg:
+                continue
+
             # Cooldown check
             if cooldowns.get(skill_name, 0) > 0:
                 continue
@@ -161,9 +174,7 @@ class GameRoom:
     async def broadcast_state(self, message: str = "", extra: Optional[dict] = None):
         current_player = self.turn
         available_actions = (
-            self._compute_available_actions(current_player)
-            if self.is_active
-            else []
+            self._compute_available_actions(current_player) if self.is_active else []
         )
 
         state = {
@@ -188,14 +199,20 @@ class GameRoom:
         if not self.is_active or player != self.turn:
             return
 
-        opponent = self.player_names[1] if player == self.player_names[0] else self.player_names[0]
+
+
+        opponent = (
+            self.player_names[1]
+            if player == self.player_names[0]
+            else self.player_names[0]
+        )
         self.turn_number += 1
         messages = []
 
         # ── 1. STUN & FREEZE CHECK ──────────────────────────────────────────────────────
         stun_effect = self._get_status(player, "STUN")
         freeze_effect = self._get_status(player, "FREEZE")
-        
+
         if stun_effect or freeze_effect:
             eff_name = "STUN" if stun_effect else "FREEZE"
             emoji = "⚡" if stun_effect else "🧊"
@@ -203,7 +220,9 @@ class GameRoom:
             # FREEZE stays for 2 turns, let tick handler remove it, but it skips turn
             if stun_effect:
                 self.players[player]["status_effects"] = [
-                    s for s in self.players[player]["status_effects"] if s["name"] != "STUN"
+                    s
+                    for s in self.players[player]["status_effects"]
+                    if s["name"] != "STUN"
                 ]
             else:
                 # Deduct FREEZE turn
@@ -218,11 +237,11 @@ class GameRoom:
             self.players[player]["momentum_stacks"] = 0
             messages.append(f"{emoji} {player} ter-{eff_name} dan melewati giliran!")
             self._decrement_cooldowns(player)
-            
+
             # TICK STATUS SEBELUM PINDAH GILIRAN JIKA SKIP
             tick_msgs = self._tick_status_effects(player)
             messages.extend(tick_msgs)
-            
+
             self.turn = opponent
             await self.broadcast_state(" | ".join(messages))
             return
@@ -238,14 +257,16 @@ class GameRoom:
                 err_msg = f"🌀 Rage belum penuh! ({rage_now}/{MAX_RAGE})"
             else:
                 err_msg = f"❌ Aksi '{action}' tidak valid."
-            
+
             try:
                 if self.players[player]["ws"]:
-                    await self.players[player]["ws"].send_json({
-                        "type": "action_error",
-                        "message": err_msg,
-                        "available_actions": available,
-                    })
+                    await self.players[player]["ws"].send_json(
+                        {
+                            "type": "action_error",
+                            "message": err_msg,
+                            "available_actions": available,
+                        }
+                    )
             except Exception:
                 pass
             return
@@ -284,7 +305,9 @@ class GameRoom:
         elif action == "iron_shield":
             status_applied = "SHIELD"
             self._apply_status(player, "SHIELD")
-            messages.append(f"🛡️ {player} memasang Iron Shield! (Damage -50% selama 1 turn)")
+            messages.append(
+                f"🛡️ {player} memasang Iron Shield! (Damage -50% selama 1 turn)"
+            )
             pdata["streak"] = 0
             pdata["momentum_stacks"] = 0
         elif action == "ultimate":
@@ -299,28 +322,34 @@ class GameRoom:
         # Toxic Explosion: Opponent has POISON + we use fire_blast
         if action == "fire_blast" and self._get_status(opponent, "POISON"):
             self._remove_status(opponent, "POISON")
-            status_applied = None # Burn is negated by explosion
+            status_applied = None  # Burn is negated by explosion
             damage_dealt += 35
-            messages.append("💥 TOXIC EXPLOSION! Api menyulut racun lawan! (+35 Bonus Damage)")
-        
+            messages.append(
+                "💥 TOXIC EXPLOSION! Api menyulut racun lawan! (+35 Bonus Damage)"
+            )
+
         # Shatter: Opponent has FREEZE + we use heavy_strike
         if action == "heavy_strike" and self._get_status(opponent, "FREEZE"):
             self._remove_status(opponent, "FREEZE")
             damage_dealt = int(damage_dealt * 2.5)
             messages.append("🧊💥 SHATTER! Es dihancurkan! (2.5x Critical Damage)")
-        
+
         # Steam Recovery: We have BURN + we use water_pulse or heal
         if action in ("water_pulse", "heal") and self._get_status(player, "BURN"):
             self._remove_status(player, "BURN")
             self._apply_status(player, "REGEN")
-            messages.append("🌊♨️ STEAM RECOVERY! Air memadamkan api dan memberikan efek REGEN!")
+            messages.append(
+                "🌊♨️ STEAM RECOVERY! Air memadamkan api dan memberikan efek REGEN!"
+            )
 
         # ── 4. TERAPKAN DAMAGE KE LAWAN ────────────────────────────────────────
         if damage_dealt > 0:
             opponent_shield = self._get_status(opponent, "SHIELD")
             if opponent_shield:
                 reduced = int(damage_dealt * SHIELD_REDUCTION)
-                messages.append(f"🛡️ SHIELD {opponent} menyerap serangan! Damage {damage_dealt} → {reduced}")
+                messages.append(
+                    f"🛡️ SHIELD {opponent} menyerap serangan! Damage {damage_dealt} → {reduced}"
+                )
                 damage_dealt = reduced
                 self._remove_status(opponent, "SHIELD")
 
@@ -343,7 +372,9 @@ class GameRoom:
             if pdata["momentum_stacks"] > 0 and action in ("attack", "heavy_strike"):
                 momentum_info = f" (💢 Momentum x{pdata['momentum_stacks']})"
 
-            messages.append(f"{player} {skill_label} {opponent} -{damage_dealt} HP!{momentum_info}")
+            messages.append(
+                f"{player} {skill_label} {opponent} -{damage_dealt} HP!{momentum_info}"
+            )
 
         # ── 5. TERAPKAN HEAL ───────────────────────────────────────────────────
         if heal_done > 0:
@@ -355,7 +386,9 @@ class GameRoom:
             self._apply_status(opponent, status_applied)
             emoji = STATUS_CONFIG[status_applied]["emoji"]
             dur = STATUS_CONFIG[status_applied]["duration"]
-            messages.append(f"{emoji} {opponent} terkena {status_applied} ({dur} turn)!")
+            messages.append(
+                f"{emoji} {opponent} terkena {status_applied} ({dur} turn)!"
+            )
 
         # ── 7. UPDATE MOMENTUM STREAK ──────────────────────────────────────────
         if is_attack_action:
@@ -364,7 +397,9 @@ class GameRoom:
                 new_stacks = min(MOMENTUM_MAX_STACKS, pdata["momentum_stacks"] + 1)
                 if new_stacks > pdata["momentum_stacks"]:
                     pdata["momentum_stacks"] = new_stacks
-                    messages.append(f"💢 MOMENTUM! {player} bonus damage! (Stack {new_stacks}/{MOMENTUM_MAX_STACKS})")
+                    messages.append(
+                        f"💢 MOMENTUM! {player} bonus damage! (Stack {new_stacks}/{MOMENTUM_MAX_STACKS})"
+                    )
         else:
             pdata["streak"] = 0
             pdata["momentum_stacks"] = 0
@@ -392,9 +427,15 @@ class GameRoom:
             pdata["hp"] = 0
             self.is_active = False
             game_over = True
-            messages.append(f"💀 GAME OVER! {opponent} MENANG! ({player} mati karena status effect!)")
+            messages.append(
+                f"💀 GAME OVER! {opponent} MENANG! ({player} mati karena status effect!)"
+            )
 
         final_message = " | ".join(messages)
+
+        if not game_over:
+            self.turn = opponent
+
         await self.broadcast_state(final_message)
 
         if game_over:
@@ -402,8 +443,6 @@ class GameRoom:
             loser_name = opponent if odata["hp"] <= 0 else player
             await self._finalize_battle(winner_name, loser_name)
             return
-
-        self.turn = opponent
 
     async def _finalize_battle(self, winner_name: str, loser_name: str):
         try:
@@ -414,7 +453,8 @@ class GameRoom:
                        JOIN players p ON p.id = ps.player_id
                        SET ps.wins = ps.wins + 1,
                            ps.matches_played = ps.matches_played + 1,
-                           ps.mmr_score = ps.mmr_score + 25
+                           ps.mmr_score = ps.mmr_score + 25,
+                           p.coins = p.coins + 50
                        WHERE p.username = %s""",
                     (winner_name,),
                 )
@@ -423,7 +463,8 @@ class GameRoom:
                        JOIN players p ON p.id = ps.player_id
                        SET ps.losses = ps.losses + 1,
                            ps.matches_played = ps.matches_played + 1,
-                           ps.mmr_score = GREATEST(ps.mmr_score - 15, 0)
+                           ps.mmr_score = GREATEST(ps.mmr_score - 15, 0),
+                           p.coins = p.coins + 15
                        WHERE p.username = %s""",
                     (loser_name,),
                 )
@@ -440,4 +481,3 @@ class GameRoom:
             conn.close()
         except Exception as e:
             print(f"Gagal mencatat statistik pertarungan: {e}")
-

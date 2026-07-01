@@ -8,6 +8,7 @@ from app.core.security import pwd_context
 
 router = APIRouter()
 
+
 @router.post("/register", status_code=201)
 def register_user(user: UserAuth):
     conn = get_db_connection()
@@ -34,6 +35,7 @@ def register_user(user: UserAuth):
             return {"message": "Registrasi berhasil"}
     finally:
         conn.close()
+
 
 @router.post("/login")
 def login_user(user: UserAuth):

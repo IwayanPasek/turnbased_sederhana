@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 def get_db_connection():
     host = os.getenv("DB_HOST", "127.0.0.1")
     port = int(os.getenv("DB_PORT", "3306"))
@@ -42,6 +43,7 @@ def get_db_connection():
     except pymysql.MySQLError as e:
         print(f"ERROR DATABASE: {e}")
         raise HTTPException(status_code=500, detail="Gagal terhubung ke database")
+
 
 def run_sql_file(connection, file_path):
     if not os.path.exists(file_path):
@@ -85,6 +87,7 @@ def run_sql_file(connection, file_path):
     except Exception as e:
         print(f"Error running migration {file_path}: {e}")
 
+
 def startup_db_migration():
     """Ensure database exists and tables are fully initialized/migrated on startup."""
     print("====== STARTING DATABASE CHECK & AUTO-MIGRATION ======")
@@ -115,7 +118,9 @@ def startup_db_migration():
             temp_conn = pymysql.connect(**conn_params)
         except Exception as e:
             if use_ssl:
-                print(f"SSL connection failed on temp connect, retrying without SSL: {e}")
+                print(
+                    f"SSL connection failed on temp connect, retrying without SSL: {e}"
+                )
                 conn_params.pop("ssl", None)
                 temp_conn = pymysql.connect(**conn_params)
             else:
@@ -125,6 +130,8 @@ def startup_db_migration():
             with temp_conn.cursor() as cursor:
                 cursor.execute(f"CREATE DATABASE IF NOT EXISTS {database}")
             temp_conn.commit()
+        except Exception as db_e:
+            print(f"CREATE DATABASE failed (normal for TiDB Serverless): {db_e}")
         finally:
             temp_conn.close()
 
@@ -145,15 +152,23 @@ def startup_db_migration():
 
             if not has_players:
                 print("Tables not found, running schema migration (001)...")
-                run_sql_file(conn, os.path.join(migrations_dir, "001_shop_upgrade_system.sql"))
+                run_sql_file(
+                    conn, os.path.join(migrations_dir, "001_shop_upgrade_system.sql")
+                )
 
             if not has_shop:
                 print("Table 'shop_items' not found, running seed migration (002)...")
-                run_sql_file(conn, os.path.join(migrations_dir, "002_seed_shop_items.sql"))
+                run_sql_file(
+                    conn, os.path.join(migrations_dir, "002_seed_shop_items.sql")
+                )
 
             if not has_battle_logs:
-                print("Table 'battle_logs' not found, running gameplay mechanics migration (003)...")
-                run_sql_file(conn, os.path.join(migrations_dir, "003_gameplay_mechanics.sql"))
+                print(
+                    "Table 'battle_logs' not found, running gameplay mechanics migration (003)..."
+                )
+                run_sql_file(
+                    conn, os.path.join(migrations_dir, "003_gameplay_mechanics.sql")
+                )
 
             # Always run 004 to ensure granted_skill exists
             print("Running weapon skills migration (004)...")

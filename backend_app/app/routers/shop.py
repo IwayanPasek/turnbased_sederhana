@@ -3,7 +3,9 @@ from fastapi import APIRouter, Header, HTTPException
 from app.core.database import get_db_connection
 from app.core.security import verify_token
 from app.models.schemas import BuyItemRequest, UpgradeItemRequest, EquipItemRequest
+
 router = APIRouter()
+
 
 @router.get("/shop/items", tags=["shop"])
 def get_shop_items(item_type: Optional[str] = None, rarity: Optional[str] = None):
@@ -187,7 +189,8 @@ def buy_item(
         with conn.cursor() as cursor:
             # Get player
             cursor.execute(
-                "SELECT id, coins, gems FROM players WHERE username = %s", (username,)
+                "SELECT id, coins, gems FROM players WHERE username = %s FOR UPDATE",
+                (username,),
             )
             player = cursor.fetchone()
             if not player:
@@ -311,7 +314,8 @@ def upgrade_item(
         with conn.cursor() as cursor:
             # Get player
             cursor.execute(
-                "SELECT id, coins, gems FROM players WHERE username = %s", (username,)
+                "SELECT id, coins, gems FROM players WHERE username = %s FOR UPDATE",
+                (username,),
             )
             player = cursor.fetchone()
             if not player:
@@ -472,7 +476,9 @@ def equip_item(
     try:
         with conn.cursor() as cursor:
             # Get player
-            cursor.execute("SELECT id FROM players WHERE username = %s", (username,))
+            cursor.execute(
+                "SELECT id FROM players WHERE username = %s FOR UPDATE", (username,)
+            )
             player = cursor.fetchone()
             if not player:
                 raise HTTPException(status_code=404, detail="Player tidak ditemukan")

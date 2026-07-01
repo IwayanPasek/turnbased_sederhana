@@ -1,5 +1,6 @@
 // lib/services/auth_service.dart
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'server_config.dart';
@@ -25,7 +26,7 @@ class AuthService {
       }
       return false;
     } catch (e) {
-      print('Error Login: $e');
+      debugPrint('Error Login: $e');
       return false;
     }
   }
@@ -41,7 +42,7 @@ class AuthService {
 
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      print('Error Register: $e');
+      debugPrint('Error Register: $e');
       return false;
     }
   }
@@ -75,7 +76,7 @@ class AuthService {
       }
       return null;
     } catch (e) {
-      print('Error fetching player stats: $e');
+      debugPrint('Error fetching player stats: $e');
       return null;
     }
   }
@@ -94,7 +95,7 @@ class AuthService {
       );
       return payloadMap['username'] as String?;
     } catch (e) {
-      print('Error extracting username: $e');
+      debugPrint('Error extracting username: $e');
       return null;
     }
   }

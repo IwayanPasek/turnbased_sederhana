@@ -1,8 +1,11 @@
 import os
 import jwt
+from typing import Optional
+from fastapi import Header
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 def verify_ws_token(token: str):
     try:
@@ -18,8 +21,6 @@ def verify_ws_token(token: str):
         print(f"ERROR WS: Token tidak valid -> {e}")
         return None
 
-from typing import Optional
-from fastapi import Header
 
 def verify_token(
     token: Optional[str] = None, authorization: Optional[str] = Header(None)
@@ -30,5 +31,5 @@ def verify_token(
 
     if not tok:
         return None
-        
+
     return verify_ws_token(tok)

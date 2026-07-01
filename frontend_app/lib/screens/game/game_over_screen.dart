@@ -14,7 +14,7 @@ class GameOverScreen extends StatelessWidget {
     required this.onLeave,
   });
 
-  bool get _iWon => message.contains(myName) && message.contains('MENANG');
+  bool get _iWon => message.contains('$myName MENANG');
 
   @override
   Widget build(BuildContext context) {

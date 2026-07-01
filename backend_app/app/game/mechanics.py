@@ -65,13 +65,17 @@ SKILL_CONFIG: Dict[str, dict] = {
 }
 
 STATUS_CONFIG: Dict[str, dict] = {
-    "BURN":   {"duration": 3, "tick_damage": 6,  "emoji": "🔥"},
-    "POISON": {"duration": 5, "tick_damage": 3,  "emoji": "☠️"},
-    "STUN":   {"duration": 1, "tick_damage": 0,  "emoji": "⚡"},
-    "SHIELD": {"duration": 1, "tick_damage": 0,  "emoji": "🛡️"},
+    "BURN": {"duration": 3, "tick_damage": 6, "emoji": "🔥"},
+    "POISON": {"duration": 5, "tick_damage": 3, "emoji": "☠️"},
+    "STUN": {"duration": 1, "tick_damage": 0, "emoji": "⚡"},
+    "SHIELD": {"duration": 1, "tick_damage": 0, "emoji": "🛡️"},
     # --- New Status (Elemental Synergy) ---
-    "FREEZE": {"duration": 2, "tick_damage": 0,  "emoji": "🧊"},
-    "REGEN":  {"duration": 2, "tick_damage": -10, "emoji": "💖"}, # Negatif damage = heal
+    "FREEZE": {"duration": 2, "tick_damage": 0, "emoji": "🧊"},
+    "REGEN": {
+        "duration": 2,
+        "tick_damage": -10,
+        "emoji": "💖",
+    },  # Negatif damage = heal
 }
 
 MAX_HP = 150

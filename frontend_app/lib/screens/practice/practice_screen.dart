@@ -1,7 +1,5 @@
-// lib/screens/practice/practice_screen.dart
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
-import '../../core/constants/skill_constants.dart';
 import '../../services/auth_service.dart';
 import '../../services/practice_service.dart';
 import '../../services/shop_service.dart';
@@ -142,7 +140,11 @@ class _PracticeScreenState extends State<PracticeScreen> {
   @override
   Widget build(BuildContext context) {
     // Generate available actions just like backend would
-    final availableActions = _unlockedSkills;
+    final availableActions = _unlockedSkills.where((skill) {
+      if (_myState.cooldownOf(skill) > 0) return false;
+      if (skill == 'ultimate' && !_myState.isRageFull) return false;
+      return true;
+    }).toList();
 
     return Scaffold(
       backgroundColor: AppColors.bgDark,
