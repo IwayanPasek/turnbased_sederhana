@@ -1,12 +1,15 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
-import 'screens/login_screen.dart';
-import 'screens/dashboard_screen.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'screens/auth/login_screen.dart';
+import 'screens/dashboard/dashboard_screen.dart';
+import 'screens/setup/server_setup_screen.dart';
 import 'services/auth_service.dart';
+import 'services/server_config.dart';
+import './core/constants/app_colors.dart';
 
 void main() {
-  // Keamanan & Stabilitas: Wajib dipanggil sebelum mengeksekusi kode native 
-  // (seperti flutter_secure_storage) sebelum runApp berjalan.
+  // Keamanan: Memastikan native bridge terinisialisasi sebelum mengakses secure storage
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const TurnBasedGameApp());
 }
@@ -18,19 +21,21 @@ class TurnBasedGameApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Turn Based Game',
-      debugShowCheckedModeBanner: false, // Efisiensi UI: Menghilangkan banner debug
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
-        useMaterial3: true,
+      debugShowCheckedModeBanner: false,
+      themeMode: ThemeMode.dark,
+      darkTheme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: AppColors.bgDark,
+        colorScheme: const ColorScheme.dark(
+          primary: AppColors.primary,
+          secondary: AppColors.accent,
+          surface: AppColors.bgCard,
+        ),
       ),
-      // Mengerahkan rute awal ke widget pembantu untuk mengecek status sesi
       home: const AuthChecker(),
     );
   }
 }
 
-/// Widget AuthChecker berfungsi sebagai gerbang utama (Router/Middleware).
-/// Ini mencegah transisi layar yang kasar saat aplikasi pertama kali dibuka.
 class AuthChecker extends StatefulWidget {
   const AuthChecker({super.key});
 
@@ -40,53 +45,58 @@ class AuthChecker extends StatefulWidget {
 
 class _AuthCheckerState extends State<AuthChecker> {
   final AuthService _authService = AuthService();
-  
+  final _storage = const FlutterSecureStorage();
+
   bool _isLoading = true;
+  bool _hasServerUrl = false;
   bool _isLoggedIn = false;
 
   @override
   void initState() {
     super.initState();
-    _verifySession();
+    _initializeApp();
   }
 
-  /// Efisiensi: Membaca token secara lokal dari storage terenkripsi
-  /// jauh lebih cepat daripada langsung melakukan request API saat splash screen.
-  Future<void> _verifySession() async {
+  /// Efisiensi Logika: Melakukan verifikasi berantai (URL Server -> Token JWT)
+  /// untuk mencegah kesalahan network request ke alamat yang kosong.
+  Future<void> _initializeApp() async {
     try {
-      final token = await _authService.getToken();
-      
-      // Verifikasi sederhana: cek apakah token ada dan tidak kosong
-      if (token != null && token.isNotEmpty) {
-        setState(() {
+      // 1. Periksa apakah URL server sudah pernah disimpan secara lokal
+      final savedUrl = await _storage.read(key: 'server_url');
+      if (savedUrl != null && savedUrl.isNotEmpty) {
+        ServerConfig.baseUrl = savedUrl;
+        _hasServerUrl = true;
+
+        // 2. Jika URL valid, lakukan pengecekan token sesi login
+        final token = await _authService.getToken();
+        if (token != null && token.isNotEmpty) {
           _isLoggedIn = true;
-        });
+        }
+      } else {
+        _hasServerUrl = false;
       }
     } catch (e) {
-      // Keamanan: Jika terjadi error pada secure storage, paksa user ke state unauthenticated
-      setState(() {
-        _isLoggedIn = false;
-      });
+      // Keamanan fallback: Jika storage corrupt, paksa reset status aplikasi
+      _hasServerUrl = false;
+      _isLoggedIn = false;
     } finally {
-      // Hentikan indikator loading setelah pengecekan selesai
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Menampilkan layar loading (Splash Screen sederhana) selama pengecekan token
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // Navigasi dinamis: Jika token valid, langsung ke Dashboard. Jika tidak, ke Login.
-    return _isLoggedIn ? const DashboardScreen() : const LoginScreen();
+    // Alur penentuan layar berdasarkan kelengkapan konfigurasi data
+    if (!_hasServerUrl) {
+      return const ServerSetupScreen();
+    } else if (!_isLoggedIn) {
+      return const LoginScreen();
+    } else {
+      return const DashboardScreen();
+    }
   }
 }

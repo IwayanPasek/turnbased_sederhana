@@ -2,82 +2,100 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'server_config.dart';
 
 class AuthService {
-  // Efisiensi & Jaringan: Gunakan 127.0.0.1 untuk aplikasi desktop (Windows/Mac/Linux) 
-  // yang berjalan di mesin yang sama dengan server lokal.
-  static const String baseUrl = 'http://127.0.0.1:8000'; 
-  
   final _storage = const FlutterSecureStorage();
 
-  // ---------------------------------------------------------------------------
   // Fungsi Login
-  // ---------------------------------------------------------------------------
   Future<bool> login(String username, String password) async {
     try {
+      // Efisiensi: Mengambil baseUrl secara dinamis tanpa hardcode IP/Domain
       final response = await http.post(
-        Uri.parse('$baseUrl/login'),
+        Uri.parse('${ServerConfig.baseUrl}/login'),
         headers: {'Content-Type': 'application/json'},
-        // Keamanan: Pastikan data credentials dikirim via POST body
-        body: jsonEncode({
-          'username': username,
-          'password': password,
-        }),
+        body: jsonEncode({'username': username, 'password': password}),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        // Keamanan: Token disimpan ke dalam Keystore/Keychain OS
+        // Keamanan: Menyimpan token secara terenkripsi menggunakan sub-sistem OS
         await _storage.write(key: 'jwt_token', value: data['access_token']);
         return true;
       }
       return false;
     } catch (e) {
-      // Efisiensi Debugging: Cetak error ke konsol IDE agar tidak gagal secara "bisu"
-      print('Error Auth: $e'); 
+      print('Error Login: $e');
       return false;
     }
-    
   }
 
-  // ---------------------------------------------------------------------------
-  // Fungsi Register (Yang baru saja ditambahkan)
-  // ---------------------------------------------------------------------------
+  // Fungsi Registrasi Akun baru
   Future<bool> register(String username, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/register'),
+        Uri.parse('${ServerConfig.baseUrl}/register'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': username,
-          'password': password,
-        }),
+        body: jsonEncode({'username': username, 'password': password}),
       );
 
-      // Menerima 200 atau 201 (Created) dari backend sebagai indikator sukses
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return true;
-      }
-      return false;
+      return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
-      // Efisiensi Debugging: Cetak error ke konsol IDE agar tidak gagal secara "bisu"
-      print('Error Auth: $e'); 
+      print('Error Register: $e');
       return false;
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Fungsi Logout
-  // ---------------------------------------------------------------------------
+  // Fungsi Penghapusan Sesi (Logout)
   Future<void> logout() async {
-    // Keamanan: Bersihkan kredensial lokal secara total saat pengguna keluar
     await _storage.delete(key: 'jwt_token');
   }
 
-  // ---------------------------------------------------------------------------
-  // Fungsi Pengecekan Sesi Aktif
-  // ---------------------------------------------------------------------------
+  // Fungsi Mengambil Token Sesi Aktif
   Future<String?> getToken() async {
     return await _storage.read(key: 'jwt_token');
   }
-} // <-- Pastikan kurung kurawal penutup class ini ada di paling bawah
+
+  // Fungsi Mengambil Statistik Pemain dari Server
+  Future<Map<String, dynamic>?> getPlayerStats() async {
+    try {
+      final token = await getToken();
+      if (token == null) return null;
+
+      final response = await http.get(
+        Uri.parse('${ServerConfig.baseUrl}/stats'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching player stats: $e');
+      return null;
+    }
+  }
+
+  // Fungsi Mengambil Username dari JWT Token
+  Future<String?> getUsername() async {
+    try {
+      final token = await getToken();
+      if (token == null) return null;
+
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+
+      final payloadMap = jsonDecode(
+        utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))),
+      );
+      return payloadMap['username'] as String?;
+    } catch (e) {
+      print('Error extracting username: $e');
+      return null;
+    }
+  }
+}
