@@ -20,15 +20,36 @@ class GameRoom:
         self, player1: str, player1_ws: WebSocket, player2: str, player2_ws: WebSocket
     ):
         self.players = {
-            player1: self._init_player_state(player1_ws),
-            player2: self._init_player_state(player2_ws),
+            player1: self._init_player_state(player1_ws, player1),
+            player2: self._init_player_state(player2_ws, player2),
         }
         self.player_names = [player1, player2]
         self.turn = player1
         self.turn_number = 0
         self.is_active = True
 
-    def _init_player_state(self, ws: WebSocket) -> dict:
+    def _init_player_state(self, ws: WebSocket, username: str) -> dict:
+        skills = ["attack", "heal", "ultimate"]
+
+        conn = get_db_connection()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    SELECT si.granted_skill 
+                    FROM player_inventory pi
+                    JOIN shop_items si ON pi.item_id = si.item_id
+                    JOIN players p ON pi.player_id = p.id
+                    WHERE p.username = %s AND pi.is_equipped = TRUE AND si.granted_skill IS NOT NULL
+                """, (username,))
+                for row in cursor.fetchall():
+                    skill = row["granted_skill"]
+                    if skill not in skills:
+                        skills.append(skill)
+        except Exception as e:
+            print(f"Error loading skills for {username}: {e}")
+        finally:
+            conn.close()
+
         return {
             "ws": ws,
             "hp": MAX_HP,
@@ -37,6 +58,7 @@ class GameRoom:
             "cooldowns": {},
             "streak": 0,
             "momentum_stacks": 0,
+            "granted_skills": skills,
         }
 
     def _get_status(self, player: str, status_name: str) -> Optional[dict]:
@@ -104,12 +126,20 @@ class GameRoom:
         available = []
         cooldowns = self.players[player]["cooldowns"]
         rage = self.players[player]["rage"]
+        skills = self.players[player].get("granted_skills", ["attack", "heal", "ultimate"])
 
-        for skill_name, cfg in SKILL_CONFIG.items():
+        for skill_name in skills:
+            cfg = SKILL_CONFIG.get(skill_name)
+            if not cfg: continue
+            
+            # Cooldown check
             if cooldowns.get(skill_name, 0) > 0:
                 continue
-            if skill_name == "ultimate" and rage < SKILL_CONFIG["ultimate"]["rage_required"]:
+
+            # Rage check
+            if cfg.get("requires_full_rage") and rage < MAX_RAGE:
                 continue
+
             available.append(skill_name)
         return available
 

@@ -155,6 +155,10 @@ def startup_db_migration():
                 print("Table 'battle_logs' not found, running gameplay mechanics migration (003)...")
                 run_sql_file(conn, os.path.join(migrations_dir, "003_gameplay_mechanics.sql"))
 
+            # Always run 004 to ensure granted_skill exists
+            print("Running weapon skills migration (004)...")
+            run_sql_file(conn, os.path.join(migrations_dir, "004_weapon_skills.sql"))
+
             print("Database check completed successfully.")
         finally:
             conn.close()

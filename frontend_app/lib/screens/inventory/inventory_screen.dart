@@ -316,7 +316,25 @@ class _InventoryScreenState extends State<InventoryScreen> {
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 6),
+                                      const SizedBox(height: 6),
+                                      if (inv['granted_skill'] != null && inv['granted_skill'].toString().isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.only(bottom: 6),
+                                          child: Row(
+                                            children: [
+                                              const Icon(Icons.auto_awesome, size: 14, color: AppColors.accent),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                'Skill: ${inv['granted_skill']}',
+                                                style: const TextStyle(
+                                                  color: AppColors.accent,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                     Text(
                                       'Level: $level / ${_formatNumber(maxLevel)}',
                                       style: const TextStyle(

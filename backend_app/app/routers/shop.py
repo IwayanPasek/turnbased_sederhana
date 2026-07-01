@@ -27,6 +27,7 @@ def get_shop_items(item_type: Optional[str] = None, rarity: Optional[str] = None
                     is_upgradeable,
                     max_level,
                     icon_url,
+                    granted_skill,
                     is_active
                 FROM shop_items
                 WHERE is_active = TRUE
@@ -71,7 +72,10 @@ def get_shop_item_details(item_id: int):
                     is_upgradeable,
                     max_level,
                     icon_url,
-                    is_active
+                    granted_skill,
+                    is_active,
+                    created_at,
+                    updated_at
                 FROM shop_items
                 WHERE item_id = %s
                 """,
@@ -149,7 +153,8 @@ def get_player_inventory(
                     si.max_level,
                     si.base_cost_coins,
                     si.base_cost_gems,
-                    si.stat_type
+                    si.stat_type,
+                    si.granted_skill
                 FROM player_inventory pi
                 JOIN shop_items si ON pi.item_id = si.item_id
                 WHERE pi.player_id = %s

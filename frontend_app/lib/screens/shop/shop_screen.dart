@@ -202,6 +202,24 @@ class _ShopScreenState extends State<ShopScreen> {
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                     ),
+                                    if (item['granted_skill'] != null && item['granted_skill'].toString().isNotEmpty)
+                                      Padding(
+                                        padding: const EdgeInsets.only(top: 6),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.auto_awesome, size: 14, color: AppColors.accent),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'Skill: ${item['granted_skill']}',
+                                              style: const TextStyle(
+                                                color: AppColors.accent,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                     const SizedBox(height: 8),
                                     Row(
                                       children: [

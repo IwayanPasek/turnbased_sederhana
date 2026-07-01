@@ -4,6 +4,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/skill_constants.dart';
 import '../../services/auth_service.dart';
 import '../../services/practice_service.dart';
+import '../../services/shop_service.dart';
 import '../../models/player_state.dart';
 import '../../widgets/game/skill_grid.dart';
 import '../../widgets/game/player_card.dart';
@@ -19,6 +20,7 @@ class PracticeScreen extends StatefulWidget {
 class _PracticeScreenState extends State<PracticeScreen> {
   final _auth = AuthService();
   final _practice = PracticeService();
+  final _shop = ShopService();
 
   String _username = 'Pemain';
   final String _botName = 'Bot Latihan';
@@ -26,6 +28,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
   PlayerState _myState = PlayerState.initial();
   PlayerState _botState = PlayerState.initial();
   List<String> _battleLogs = [];
+  List<String> _unlockedSkills = ['attack', 'heal', 'ultimate'];
 
   bool _isMyTurn = true;
   bool _actionLocked = false;
@@ -35,14 +38,31 @@ class _PracticeScreenState extends State<PracticeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUser();
+    _loadUserAndSkills();
   }
 
-  void _loadUser() async {
+  void _loadUserAndSkills() async {
     final name = await _auth.getUsername();
     if (name != null && mounted) {
       setState(() {
         _username = name;
+      });
+    }
+
+    // Load inventory to determine granted skills
+    final invList = await _shop.fetchInventory();
+    if (invList != null && mounted) {
+      final Set<String> newSkills = {'attack', 'heal', 'ultimate'};
+      
+      for (final item in invList) {
+        final equipped = item['is_equipped'] == true || item['is_equipped'] == 1;
+        if (equipped && item['granted_skill'] != null && item['granted_skill'].toString().isNotEmpty) {
+          newSkills.add(item['granted_skill'].toString());
+        }
+      }
+
+      setState(() {
+        _unlockedSkills = newSkills.toList();
       });
     }
   }
@@ -121,8 +141,8 @@ class _PracticeScreenState extends State<PracticeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Generate available actions just like backend would (all keys in kSkillMap)
-    final availableActions = kSkillMap.keys.toList();
+    // Generate available actions just like backend would
+    final availableActions = _unlockedSkills;
 
     return Scaffold(
       backgroundColor: AppColors.bgDark,
