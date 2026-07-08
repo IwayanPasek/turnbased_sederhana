@@ -47,11 +47,13 @@ class AppColors {
   static const Color rageReady      = Color(0xFFAA00FF);
   static const Color rageGlow       = Color(0x66AA00FF);
 
-  // ── Status Effects ───────────────────────────────────────────────────────
+  // ── Status Effects ─────────────────────────────────────────────────────────
   static const Color burn           = Color(0xFFFF3D00);
   static const Color poison         = Color(0xFF7B1FA2);
   static const Color stun           = Color(0xFFFFD600);
   static const Color shield         = Color(0xFF1565C0);
+  static const Color freeze         = Color(0xFF00BCD4); // Cyan ice
+  static const Color regen          = Color(0xFF66BB6A); // Soft green
 
   // ── Skill Button Colors ──────────────────────────────────────────────────
   static const Color skillAttack      = Color(0xFFE53935);
@@ -96,6 +98,8 @@ class AppColors {
       'POISON' => poison,
       'STUN'   => stun,
       'SHIELD' => shield,
+      'FREEZE' => freeze,
+      'REGEN'  => regen,
       _        => textMuted,
     };
   }

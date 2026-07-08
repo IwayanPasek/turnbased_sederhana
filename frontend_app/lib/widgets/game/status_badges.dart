@@ -1,4 +1,4 @@
-﻿// lib/widgets/game/status_badges.dart
+// lib/widgets/game/status_badges.dart
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../models/player_state.dart';
@@ -45,6 +45,8 @@ class StatusBadges extends StatelessWidget {
         'POISON' => '☠️',
         'STUN'   => '⚡',
         'SHIELD' => '🛡️',
+        'FREEZE' => '🧊',
+        'REGEN'  => '💖',
         _        => '❓',
       };
 }

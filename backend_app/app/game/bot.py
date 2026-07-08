@@ -1,5 +1,5 @@
 from typing import List
-from app.game.mechanics import SKILL_CONFIG
+from app.game.mechanics import SKILL_CONFIG, MAX_RAGE
 
 
 def _sim_tick_status(effects: List[dict], hp: int) -> tuple:
@@ -45,10 +45,8 @@ def _bot_choose_action(
     for skill_name, cfg in SKILL_CONFIG.items():
         if cooldowns.get(skill_name, 0) > 0:
             continue
-        if (
-            skill_name == "ultimate"
-            and rage < SKILL_CONFIG["ultimate"]["rage_required"]
-        ):
+        # Bug fix #5: gunakan rage_required (konsisten dengan engine) dan MAX_RAGE
+        if cfg.get("rage_required") and rage < MAX_RAGE:
             continue
         valid_options.append(skill_name)
 

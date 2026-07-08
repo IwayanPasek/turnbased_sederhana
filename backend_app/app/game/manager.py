@@ -82,6 +82,11 @@ class ArenaManager:
                     )
                 except Exception:
                     pass
+                # BUG-10 fix: finalize battle stats on disconnect
+                try:
+                    await room._finalize_battle(winner_name, player_left)
+                except Exception as e:
+                    print(f"Gagal finalize battle saat disconnect: {e}")
                 rooms_to_delete.append(room_id)
 
         for rid in rooms_to_delete:
@@ -97,8 +102,11 @@ class ArenaManager:
             for room in self.active_rooms.values():
                 for player_name, pdata in room.players.items():
                     if pdata["ws"] == websocket:
-                        if room.is_active and room.turn == player_name:
-                            await room.process_action(player_name, action)
+                        if room.is_active:
+                            if action == "surrender" or action.startswith("emote:"):
+                                await room.process_action(player_name, action)
+                            elif room.turn == player_name:
+                                await room.process_action(player_name, action)
                         return
         except json.JSONDecodeError:
             pass

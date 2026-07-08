@@ -286,7 +286,7 @@ def buy_item(request: BuyItemRequest, token: str = None):
         raise
     except Exception as e:
         conn.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Terjadi kesalahan internal pada server")
     finally:
         conn.close()
 
@@ -401,7 +401,7 @@ def upgrade_item(request: UpgradeItemRequest, token: str = None):
         raise
     except Exception as e:
         conn.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Terjadi kesalahan internal pada server")
     finally:
         conn.close()
 
@@ -489,7 +489,7 @@ def equip_item(request: EquipItemRequest, token: str = None):
         raise
     except Exception as e:
         conn.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Terjadi kesalahan internal pada server")
     finally:
         conn.close()
 

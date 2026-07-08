@@ -2,15 +2,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'screens/auth/login_screen.dart';
-import 'screens/dashboard/dashboard_screen.dart';
+import 'screens/main_layout.dart';
 import 'screens/setup/server_setup_screen.dart';
 import 'services/auth_service.dart';
 import 'services/server_config.dart';
-import './core/constants/app_colors.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'core/constants/app_colors.dart';
+import 'package:flutter/services.dart';
 
-void main() {
+void main() async {
   // Keamanan: Memastikan native bridge terinisialisasi sebelum mengakses secure storage
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Memaksa mode lanskap
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
+  
   runApp(const TurnBasedGameApp());
 }
 
@@ -23,9 +32,12 @@ class TurnBasedGameApp extends StatelessWidget {
       title: 'Turn Based Game',
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.dark,
+      theme: ThemeData(
+        textTheme: GoogleFonts.poppinsTextTheme(),
+      ),
       darkTheme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: AppColors.bgDark,
-        colorScheme: const ColorScheme.dark(
+        colorScheme: ColorScheme.dark(
           primary: AppColors.primary,
           secondary: AppColors.accent,
           surface: AppColors.bgCard,
@@ -96,7 +108,7 @@ class _AuthCheckerState extends State<AuthChecker> {
     } else if (!_isLoggedIn) {
       return const LoginScreen();
     } else {
-      return const DashboardScreen();
+      return const MainLayout();
     }
   }
 }

@@ -16,7 +16,7 @@ class StatusEffect {
   factory StatusEffect.fromJson(Map<String, dynamic> json) => StatusEffect(
         name:      json['name'] as String,
         turnsLeft: (json['turns_left'] as num).toInt(),
-        value:     (json['value'] as num).toInt(),
+        value:     (json['value'] as num?)?.toInt() ?? 0,
       );
 }
 
@@ -29,6 +29,15 @@ class PlayerState {
   final Map<String, int> cooldowns; // {skill_id: turns_remaining}
   final int streak;
   final int momentumStacks;
+  final String title;
+  final String avatarStyle;
+  
+  // Stats tambahan untuk practice mode
+  final int bonusAttack;
+  final double critChance;
+  final double dodgeChance;
+  final int rageGen;
+  final List<String> grantedSkills;
 
   const PlayerState({
     required this.hp,
@@ -39,6 +48,13 @@ class PlayerState {
     required this.cooldowns,
     required this.streak,
     required this.momentumStacks,
+    this.title = "",
+    this.avatarStyle = "default",
+    this.bonusAttack = 0,
+    this.critChance = 0.0,
+    this.dodgeChance = 0.0,
+    this.rageGen = 8,
+    this.grantedSkills = const [],
   });
 
   factory PlayerState.initial() => const PlayerState(
@@ -50,6 +66,12 @@ class PlayerState {
         cooldowns: {},
         streak: 0,
         momentumStacks: 0,
+        avatarStyle: "default",
+        bonusAttack: 0,
+        critChance: 0.0,
+        dodgeChance: 0.0,
+        rageGen: 8,
+        grantedSkills: const [],
       );
 
   factory PlayerState.fromJson(Map<String, dynamic> json) => PlayerState(
@@ -65,6 +87,13 @@ class PlayerState {
         ),
         streak:         (json['streak'] as num?)?.toInt() ?? 0,
         momentumStacks: (json['momentum_stacks'] as num?)?.toInt() ?? 0,
+        title:          json['title'] as String? ?? "",
+        avatarStyle:    json['avatar_style'] as String? ?? "default",
+        bonusAttack:    (json['bonus_attack'] as num?)?.toInt() ?? 0,
+        critChance:     (json['crit_chance'] as num?)?.toDouble() ?? 0.0,
+        dodgeChance:    (json['dodge_chance'] as num?)?.toDouble() ?? 0.0,
+        rageGen:        (json['rage_gen'] as num?)?.toInt() ?? 8,
+        grantedSkills:  (json['granted_skills'] as List<dynamic>? ?? []).map((e) => e.toString()).toList(),
       );
 
   double get hpRatio  => maxHp > 0 ? (hp / maxHp).clamp(0.0, 1.0) : 0.0;

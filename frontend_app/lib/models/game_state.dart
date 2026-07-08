@@ -9,6 +9,7 @@ class GameState {
   final List<String> availableActions;
   final String message;
   final bool isGameOver;
+  final List<Map<String, dynamic>> animationEvents;
 
   const GameState({
     required this.turn,
@@ -17,6 +18,7 @@ class GameState {
     required this.availableActions,
     required this.message,
     required this.isGameOver,
+    required this.animationEvents,
   });
 
   factory GameState.initial() => const GameState(
@@ -26,6 +28,7 @@ class GameState {
         availableActions: [],
         message: '',
         isGameOver: false,
+        animationEvents: [],
       );
 
   factory GameState.fromJson(Map<String, dynamic> json) {
@@ -42,6 +45,9 @@ class GameState {
       ),
       message:   msg,
       isGameOver: msg.contains('GAME OVER'),
+      animationEvents: List<Map<String, dynamic>>.from(
+        json['animation_events'] as List<dynamic>? ?? [],
+      ),
     );
   }
 

@@ -23,7 +23,7 @@ class StatsService {
   Future<Map<String, dynamic>?> getSkillsInfo() async {
     try {
       final res = await http.get(
-        Uri.parse('${ServerConfig.baseUrl}/skills/info'),
+        Uri.parse('${ServerConfig.baseUrl}/game/skills'), // BUG-12 fix: was /skills/info
       );
       if (res.statusCode == 200) {
         return jsonDecode(res.body) as Map<String, dynamic>;
@@ -31,6 +31,22 @@ class StatsService {
       return null;
     } catch (_) {
       return null;
+    }
+  }
+
+  Future<bool> updateAvatar(String token, String avatarStyle) async {
+    try {
+      final res = await http.post(
+        Uri.parse('${ServerConfig.baseUrl}/profile/avatar'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'avatar_style': avatarStyle}),
+      );
+      return res.statusCode == 200;
+    } catch (_) {
+      return false;
     }
   }
 }

@@ -25,7 +25,13 @@ class GameNotifier extends ChangeNotifier {
   }
 
   Future<void> connect() async {
+    // BUG-9 fix: Reset semua state lama sebelum koneksi baru
+    _sub?.cancel();
+    _service.disconnect();
+    battleLog.clear();
+    isWaiting = true;
     _setState(const AsyncValue.loading());
+
     final token = await _auth.getToken();
     if (token == null) {
       _setState(AsyncValue.error('Sesi tidak valid', StackTrace.current));
@@ -48,6 +54,11 @@ class GameNotifier extends ChangeNotifier {
           if (battleLog.length > 50) battleLog.removeLast();
         }
         _setState(AsyncValue.data(gs));
+      } else if (type == 'emote') {
+        final player = data['player'] as String? ?? 'Seseorang';
+        final emote = data['emote'] as String? ?? '...';
+        battleLog.insert(0, '💬 $player: $emote');
+        _setState(AsyncValue.data(state.value ?? GameState.initial()));
       } else if (type == 'action_error') {
         final msg = data['message'] as String? ?? 'Error';
         battleLog.insert(0, '⚠️ $msg');

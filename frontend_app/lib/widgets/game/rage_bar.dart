@@ -35,7 +35,7 @@ class RageBar extends StatelessWidget {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: TweenAnimationBuilder<double>(
-              tween: Tween(begin: ratio, end: ratio),
+              tween: Tween(begin: 0.0, end: ratio),
               duration: const Duration(milliseconds: 400),
               curve: Curves.easeOut,
               builder: (_, value, child) => LinearProgressIndicator(

@@ -27,15 +27,31 @@ class HpBar extends StatelessWidget {
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(height / 2),
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(begin: ratio, end: ratio),
-            duration: const Duration(milliseconds: 400),
-            curve: Curves.easeOut,
-            builder: (_, value, child) => LinearProgressIndicator(
-              value: value,
-              backgroundColor: Colors.white12,
-              valueColor: AlwaysStoppedAnimation<Color>(color),
-              minHeight: height,
+          child: SizedBox(
+            height: height,
+            child: Stack(
+              children: [
+                // Background
+                Container(color: Colors.white12),
+                
+                // Trailing bar (slowly catches up to current ratio)
+                AnimatedFractionallySizedBox(
+                  duration: const Duration(milliseconds: 800),
+                  curve: Curves.easeOutCubic,
+                  alignment: Alignment.centerLeft,
+                  widthFactor: ratio,
+                  child: Container(color: Colors.white.withOpacity(0.4)),
+                ),
+                
+                // Main bar (moves fast)
+                AnimatedFractionallySizedBox(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOut,
+                  alignment: Alignment.centerLeft,
+                  widthFactor: ratio,
+                  child: Container(color: color),
+                ),
+              ],
             ),
           ),
         ),

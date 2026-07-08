@@ -1,12 +1,20 @@
 // lib/screens/item_detail_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/shop_service.dart';
 import '../../core/constants/app_colors.dart';
 import '../../widgets/common/rarity_badge.dart';
+import '../../providers/profile_provider.dart';
 
 class ItemDetailScreen extends StatefulWidget {
   final Map<String, dynamic> item;
-  const ItemDetailScreen({super.key, required this.item});
+  final String heroPrefix;
+
+  const ItemDetailScreen({
+    super.key,
+    required this.item,
+    this.heroPrefix = '',
+  });
 
   @override
   State<ItemDetailScreen> createState() => _ItemDetailScreenState();
@@ -170,6 +178,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
           behavior: SnackBarBehavior.floating,
         ),
       );
+      // Update global profile stats (coins/gems) efficiently
+      profileNotifier.load();
       Navigator.pop(context, true);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -295,7 +305,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                       child: child,
                     ),
                     child: Hero(
-                      tag: 'item-icon-${item['id']}',
+                      tag: '${widget.heroPrefix}item-icon-${item['id']}',
                       child: Container(
                         width: 100,
                         height: 100,
@@ -331,7 +341,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
                   ),
                   const SizedBox(height: 14),
                   Hero(
-                    tag: 'item-title-${item['id']}',
+                    tag: '${widget.heroPrefix}item-title-${item['id']}',
                     child: Material(
                       color: Colors.transparent,
                       child: Text(
@@ -869,40 +879,57 @@ class _ItemDetailScreenState extends State<ItemDetailScreen>
               // Buy button
               SizedBox(
                 height: 48,
-                child: ElevatedButton.icon(
-                  onPressed: _isBuying ? null : _handleBuy,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _isSpecialItem
-                        ? AppColors.warning
-                        : AppColors.primary,
-                    foregroundColor: _isSpecialItem ? Colors.black : Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    elevation: _isSpecialItem ? 8 : 4,
-                    shadowColor: _isSpecialItem
-                        ? AppColors.warning.withValues(alpha: 0.5)
-                        : AppColors.primary.withValues(alpha: 0.4),
-                  ),
-                  icon: _isBuying
-                      ? SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: _isSpecialItem ? Colors.black : Colors.white,
+                child: item['is_owned'] == true
+                    ? ElevatedButton.icon(
+                        onPressed: null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.border.withValues(alpha: 0.5),
+                          foregroundColor: Colors.white54,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                        )
-                      : Icon(
-                          _isSpecialItem ? Icons.star : Icons.shopping_cart,
-                          size: 20,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
                         ),
-                  label: Text(
-                    _isSpecialItem ? 'Dapatkan!' : 'Beli Item',
-                    style: const TextStyle(fontWeight: FontWeight.w700),
-                  ),
-                ),
+                        icon: const Icon(Icons.check_circle, size: 20),
+                        label: const Text(
+                          'Dimiliki',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      )
+                    : ElevatedButton.icon(
+                        onPressed: _isBuying ? null : _handleBuy,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _isSpecialItem
+                              ? AppColors.warning
+                              : AppColors.primary,
+                          foregroundColor: _isSpecialItem ? Colors.black : Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          elevation: _isSpecialItem ? 8 : 4,
+                          shadowColor: _isSpecialItem
+                              ? AppColors.warning.withValues(alpha: 0.5)
+                              : AppColors.primary.withValues(alpha: 0.4),
+                        ),
+                        icon: _isBuying
+                            ? SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: _isSpecialItem ? Colors.black : Colors.white,
+                                ),
+                              )
+                            : Icon(
+                                _isSpecialItem ? Icons.star : Icons.shopping_cart,
+                                size: 20,
+                              ),
+                        label: Text(
+                          _isSpecialItem ? 'Dapatkan!' : 'Beli Item',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
               ),
             ],
           ),
